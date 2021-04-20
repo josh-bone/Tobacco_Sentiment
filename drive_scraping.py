@@ -2,39 +2,31 @@ import snscrape.modules.twitter as sntwitter
 import pandas as pd
 
 user_handles = pd.read_csv('Twitter_user_handles_to_predict.csv')
-last_finished_ID = 18  # IMPORTANT: Refresh this every time the script is restarted
+maxTweets = 100
+start_ID = 1  # IMPORTANT: Refresh this every time the script is restarted
+end_ID = 6250  # Also adjust this based on your assigned segment
+num_csv = 0
 
 # loop through twitter handles
-for user in user_handles['Username'][last_finished_ID:]:
+for j,user in enumerate(user_handles['Username'][start_ID:end_ID]):
 
-    print(f"\nReading tweets of {user}...\n")
+    print(f"\nReading tweets of {user}... (#{user_handles['ID'][start_ID + j]})\n")
 
     tweets_list = []
-    for i,tweet in enumerate(sntwitter.TwitterSearchScraper('from:'+user).get_items()):
-        # TODO: decide on what tobacco-related keywords we want to monitor
+    for i,tweet in enumerate(sntwitter.TwitterSearchScraper('from:'+user+' since:2020-01-01').get_items()):
+        if i >= maxTweets:
+            break
         tweets_list.append([tweet.username, tweet.content, tweet.date])
 
-        # Monitor progress
-        if i % 1000 == 0:
-            print(f"{i//1000}k'th tweet from {user}")
-            print(tweet.content)
-            pass
-        
-        # save progress to file (every 10k tweets)
-        if (i + 1) % 10000 == 0:  # add 1 to i because it saved when i = 0
-            print("\n----Saving----\n")
-            cur_df = pd.DataFrame(tweets_list, columns=['Username','Text','Date'])
-            prev_df = pd.read_csv("Scraped_tweets.csv")
-            final_df = pd.concat([prev_df, cur_df]).drop_duplicates().reset_index(drop=True)
-            final_df.to_csv("Scraped_tweets.csv")
-            tweets_list = []
-
-    print(f"\nFinished with {user}\n")
-    #last_finished_ID = user_handles['ID'][i]
-
     # Save final (last 10k or less) tweets from the user 
-    print("\n----Saving----\n")
+    print("----Saving----\n")
     cur_df = pd.DataFrame(tweets_list, columns=['Username','Text','Date'])
-    prev_df = pd.read_csv("Scraped_tweets.csv")
-    final_df = pd.concat([prev_df, cur_df]).drop_duplicates().reset_index(drop=True)
-    final_df.to_csv("Scraped_tweets.csv")
+    try:
+        prev_df = pd.read_csv("Scraped_tweets_" + str(num_csv) + ".csv")
+        final_df = pd.concat([prev_df, cur_df]).drop_duplicates().reset_index(drop=True)
+    except:
+        final_df = cur_df
+    final_df.to_csv("Scraped_tweets_" + str(num_csv) + ".csv")
+
+    if j > 500:
+        num_csv += 1
