@@ -31,3 +31,4 @@ for j,user in enumerate(user_handles['Username'][start_ID:end_ID]):
             df = pd.DataFrame()
     except:
         pass
+df.to_csv("Scraped_tweets_" + str(num_csv) + ".csv", index=False)
