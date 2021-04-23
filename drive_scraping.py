@@ -14,18 +14,20 @@ for j,user in enumerate(user_handles['Username'][start_ID:end_ID]):
     print(f"\nReading tweets of {user}... (#{user_handles['ID'][start_ID + j]})\n")
 
     tweets_list = []
+    try:
+        for i,tweet in enumerate(sntwitter.TwitterSearchScraper('from:'+user).get_items()): # make sure gets 100 if the user has that many
+            if i >= maxTweets:
+                break
+            tweets_list.append([tweet.username, tweet.content, tweet.date])
 
-    for i,tweet in enumerate(sntwitter.TwitterSearchScraper('from:'+user).get_items()): # make sure gets 100 if the user has that many
-        if i >= maxTweets:
-            break
-        tweets_list.append([tweet.username, tweet.content, tweet.date])
+        # Save final (last 10k or less) tweets from the user 
+        cur_df = pd.DataFrame(tweets_list, columns=['Username','Text','Date'])
+        df = df.append(cur_df)
 
-    # Save final (last 10k or less) tweets from the user 
-    cur_df = pd.DataFrame(tweets_list, columns=['Username','Text','Date'])
-    df = df.append(cur_df)
-
-    if (j+1)%500==0: #save every 500 queries
-        print("----Saving----\n")
-        df.to_csv("Scraped_tweets_" + str(num_csv) + ".csv", index=False)
-        num_csv += 1
-        df = pd.DataFrame()
+        if (j+1)%500==0: #save every 500 queries
+            print("----Saving----\n")
+            df.to_csv("Scraped_tweets_" + str(num_csv) + ".csv", index=False)
+            num_csv += 1
+            df = pd.DataFrame()
+    except:
+        pass
